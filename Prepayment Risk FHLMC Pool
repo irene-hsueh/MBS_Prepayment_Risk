@@ -1,0 +1,172 @@
+use [PrfLLD_FHLMC_20210820]
+
+-- create unique clustered index [UCIX] on [dbo].[Model_PerfLLD_FHLMC_orig_200k_harp] ([LoanIdNumber],[HistDate])  
+-- create unique clustered index [UCIX] on [dbo].[Model_PerfLLD_FHLMC_201812] ([LoanIdNumber],[HistDate])  
+-- create unique clustered index [UCIX] on [dbo].[TBL_LDA_MASTER_201812] ([LoanIdNumber])  
+
+
+select 
+m.OrigDateYyyyMm/100 as OrigYear
+--,OrigTerm
+--,Floor(m.OrigWAC*2+0.5)/2 as Coupon
+--,Floor(10*m.OrigLTV+0.5)*10 as OrigLTV
+
+/*
+,case when m641.[CurrentLTV]<0.6 then 50
+when m641.[CurrentLTV]<1.0 then Floor(10*m641.[CurrentLTV]+0.5)*10 
+else 100 end as CurrLTV
+*/
+
+,DecimalDate = Year(h.HistDate)+(Month(h.HistDate)-1)/12.0
+
+--------------------------voluntary prepayment and default--------------------------
+
+,sum((m6.[SMM]-m6.[MDR])*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_vSMM]
+,sum((m641.[SMM]-m641.[MDR])*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_vSMM]
+,sum((h.[SMM]-h.[MDR])*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_vSMM]
+
+,sum(m6.[SMM]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_SMM]
+,sum(m641.[SMM]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_SMM]
+,sum(h.[SMM]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_SMM]
+
+,sum(m6.[MDR]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_MDR]
+,sum(m641.[MDR]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_MDR]
+,sum(h.[MDR]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_MDR]
+
+---------------------------deliquency transitional matrix---------------------------
+
+,(avg(m6.[CTo0])) as [model6_CTo0]
+,(avg(m641.[CTo0])) as [model641_CTo0]
+,(sum(cast(h.[_CTo0] as real))/sum(cast(h.[PopC] as real))) as [actual_CTo0]
+
+,(avg(m6.[0ToC])) as [model6_0ToC]
+,(avg(m641.[0ToC])) as [model641_0ToC]
+,(sum(cast(h.[_0ToC] as real))/sum(cast(h.[Pop0] as real))) as [actual_0ToC]
+
+,(avg(m6.[0To0])) as [model6_0To0]
+,(avg(m641.[0To0])) as [model641_0To0]
+,(sum(cast(h.[_0To0] as real))/sum(cast(h.[Pop0] as real))) as [actual_0To0]
+
+,(avg(m6.[0To0])) as [model6_0To0]
+,(avg(m641.[0To0])) as [model641_0To0]
+,(sum(cast(h.[_0To0] as real))/sum(cast(h.[Pop0] as real))) as [actual_0To0]
+
+,(avg(m6.[0To3])) as [model6_0To3]
+,(avg(m641.[0To3])) as [model641_0To3]
+,(sum(cast(h.[_0To3] as real))/sum(cast(h.[Pop0] as real))) as [actual_0To3]
+
+,(avg(m6.[3To0])) as [model6_3To0]
+,(avg(m641.[3To0])) as [model641_3To0]
+,(sum(cast(h.[_3To0] as real))/sum(cast(h.[Pop30] as real))) as [actual_3To0]
+
+,(avg(m6.[3To3])) as [model6_3To3]
+,(avg(m641.[3To3])) as [model641_3To3]
+,(sum(cast(h.[_3To3] as real))/sum(cast(h.[Pop30] as real))) as [actual_3To3]
+
+,(avg(m6.[3To6])) as [model6_3To6]
+,(avg(m641.[3To6])) as [model641_3To6]
+,(sum(cast(h.[_3To6] as real))/sum(cast(h.[Pop30] as real))) as [actual_3To6]
+
+,(avg(m6.[6To9])) as [model6_6To9]
+,(avg(m641.[6To9])) as [model641_6To9]
+,(sum(cast(h.[_6To9] as real))/sum(cast(h.[Pop60] as real))) as [actual_6To9]
+
+,(avg(m6.[9To9])) as [model6_9To9]
+,(avg(m641.[9To9])) as [model641_9To9]
+,(sum(cast(h.[_9To9] as real))/sum(cast(h.[Pop90] as real))) as [actual_9To9]
+
+,(avg(m6.[9ToF])) as [model6_9ToF]
+,(avg(m641.[9ToF])) as [model641_9ToF]
+,(sum(cast(h.[_9ToF] as real))/sum(cast(h.[Pop90] as real))) as [actual_9ToF]
+
+,(avg(m6.[9ToD])) as [model6_9ToD]
+,(avg(m641.[9ToD])) as [model641_9ToD]
+,(sum(cast(h.[_9ToD] as real))/sum(cast(h.[Pop90] as real))) as [actual_9ToD]
+
+,(avg(m6.[9ToC])) as [model6_9ToC]
+,(avg(m641.[9ToC])) as [model641_9ToC]
+,(sum(cast(h.[_9ToC] as real))/sum(cast(h.[Pop90] as real))) as [actual_9ToC]
+
+/*
+,(avg(m6.[9To0])) as [model6_9To0]
+,(avg(m641.[9To0])) as [model641_9To0]
+,(sum(cast(h.[_9To0] as real))/sum(cast(h.[Pop90] as real))) as [actual_9To0]
+
+,(avg(m6.[9To3])) as [model6_9To3]
+,(avg(m641.[9To3])) as [model641_9To3]
+,(sum(cast(h.[_9To3] as real))/sum(cast(h.[Pop90] as real))) as [actual_9To3]
+
+,(avg(m6.[9To6])) as [model6_9To6]
+,(avg(m641.[9To6])) as [model641_9To6]
+,(sum(cast(h.[_9To6] as real))/sum(cast(h.[Pop90] as real))) as [actual_9To6]
+*/
+
+--------------------------------cumulative probability--------------------------------
+
+,sum(m6.[Pop0]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_Pop0]
+,sum(m641.[Pop0]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_Pop0]
+,sum(h.[Pop0]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_Pop0]
+
+,sum(m6.[Pop30]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_Pop30]
+,sum(m641.[Pop30]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_Pop30]
+,sum(h.[Pop30]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_Pop30]
+
+,sum(m6.[Pop60]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_Pop60]
+,sum(m641.[Pop60]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_Pop60]
+,sum(h.[Pop60]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_Pop60]
+
+,sum(m6.[Pop90]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model6_Pop90]
+,sum(m641.[Pop90]*h.[CurrentBal])/sum(h.[CurrentBal]) as [model641_Pop90]
+,sum(h.[Pop90]*h.[CurrentBal])/sum(h.[CurrentBal]) as [actual_Pop90]
+
+
+,sum(h.[CurrentBal])/1e9 as [UPB]
+
+from [dbo].[tbl_LDA_Master_orig_2m] as m 
+
+inner join [dbo].[Model_PerfLLD_FHLMC_orig_30y] as m641
+on m.[LoanIdNumber] = m641.[LoanIdNumber]
+
+inner join [dbo].[Model_PerfLLD_FHLMC_orig_2m] as m6
+on m.[LoanIdNumber] = m6.[LoanIdNumber] and m641.[HistDate] = h.[HistDate]
+
+left join [dbo].[tbl_LDA_History_DQ_Sampling_id_orig] as h
+on m.[LoanIdNumber] = h.[LoanIdNumber] and m641.[HistDate] = h.[HistDate]
+
+--where IsARM=0 and OrigTerm in (180, 240, 360)
+--where m.LoanIdNumber = 7464402
+
+group by 
+m.OrigDateYyyyMm/100
+--,OrigTerm
+--,Floor(m.OrigWAC*2+0.5)/2 
+--,Floor(10*m.OrigLTV+0.5)*10 
+--,Floor(10*m641.[CurrentLTV]+0.5)*10
+
+/*
+,case when m641.[CurrentLTV]<0.6 then 50
+when m641.[CurrentLTV]<1.0 then Floor(10*m641.[CurrentLTV]+0.5)*10 
+else 100 end 
+*/
+
+,year(h.[HistDate]) + (month(h.[HistDate]-1)/12.0
+
+having sum(h.[CurrentBal])>1e9 and sum(cast(h.[PopC] as real))>0
+and sum(cast(h.[Pop0] as real))>0 and sum(cast(h.[Pop30] as real))>0
+and sum(cast(h.[Pop60] as real))>0 and sum(cast(h.[Pop90] as real))>0
+
+order by 1,2,3
+
+
+/*
+CREATE UNIQUE CLUSTERED INDEX [UCIX] ON [dbo].[Model_PerfLLD_FHLMC_orig_30y]
+(
+    [LoanIdNumber] ASC,
+    [HistDate] ASC
+)
+WITH (DATA_COMPRESSION = Page) ON [PRIMARY]
+
+CREATE UNIQUE CLUSTERED INDEX [UCIX] ON [dbo].[Model_PerfLLD_FHLMC_orig_2M]
+([LoanIdNumber] ASC) WITH (DATA_COMPRESSION = Page) ON [PRIMARY]
+*/
+
